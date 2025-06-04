@@ -46,14 +46,19 @@ def transformation(local_file):
     df['new_col_first_name'] = new_col_first_name
     df['new_col_last_name']= new_col_last_name
     df['new_col_salary'] = new_col_salary
-    df.to_csv('excel_2_csv_test.csv')
+    df.to_csv('excel_2_csv.csv', index =False)
 
     return f"The new columns are added and unnecessary columns are deleted from the table "
 
 try: 
-    csv_path = r'C:\Users\Admin\Downloads\prac\excel_2_csv_test.csv'
-    n_df= pd.read_csv(csv_path, nrows=0)
-    column_names =n_df.columns
+    val =transformation(local_file)
+    print(val)
+    csv_path = r'C:\Users\Admin\Downloads\prac\excel_2_csv.csv'
+
+    n_df = pd.read_csv(csv_path)
+    print(n_df.head())
+    column_names =list(n_df.columns)
+
     my_schema = [bigquery.SchemaField(name, "STRING") for name in column_names]
     job_config = bigquery.LoadJobConfig(
         schema = my_schema, 
@@ -63,12 +68,9 @@ try:
         # write_deposition = bigquery.write_disposition.WRITE_APPEND
     )
     job_config.write_disposition="WRITE_APPEND"
-    val =transformation(local_file)
-    print(val)
-    
-    with open(csv_path, "rb") as source_file:
-        job = bg_client_conn.load_table_from_file(source_file, table_id, job_config=job_config)
-    # job = bg_client_conn.load_table_from_file(n_df, table_id, job_config=job_config)
+    # with open(csv_path, "rb") as source_file:
+    #     job = bg_client_conn.load_table_from_file(source_file, table_id, job_config=job_config)
+    job = bg_client_conn.load_table_from_dataframe(n_df, table_id, job_config=job_config)
     job.result()  # Waits for the job to complete.
 
     table = bg_client_conn.get_table(table_id)  # Make an API request.
